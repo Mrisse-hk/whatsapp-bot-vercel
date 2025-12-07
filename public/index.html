@@ -1,0 +1,734 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🤖 WhatsApp AI Bot - Vercel</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
+    <style>
+        :root {
+            --primary: #667eea;
+            --primary-dark: #764ba2;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --dark: #1f2937;
+            --light: #f9fafb;
+            --gray: #6b7280;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            color: var(--dark);
+        }
+        
+        .container {
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            width: 100%;
+            max-width: 900px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .container::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 6px;
+            background: linear-gradient(90deg, var(--primary), var(--primary-dark));
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+        
+        .logo {
+            font-size: 4rem;
+            margin-bottom: 15px;
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            display: inline-block;
+        }
+        
+        .header h1 {
+            font-size: 2.5rem;
+            color: var(--dark);
+            margin-bottom: 10px;
+            font-weight: 800;
+        }
+        
+        .header p {
+            color: var(--gray);
+            font-size: 1.1rem;
+            max-width: 600px;
+            margin: 0 auto 20px;
+            line-height: 1.6;
+        }
+        
+        .badge {
+            display: inline-block;
+            background: var(--primary);
+            color: white;
+            padding: 5px 15px;
+            border-radius: 50px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+        }
+        
+        .dashboard {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+        
+        @media (max-width: 768px) {
+            .dashboard {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        .card {
+            background: var(--light);
+            border-radius: 15px;
+            padding: 25px;
+            border: 1px solid #e5e7eb;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+        }
+        
+        .card-title {
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: var(--dark);
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .card-title i {
+            font-size: 1.5rem;
+        }
+        
+        .status-indicator {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .status-dot {
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            position: relative;
+        }
+        
+        .status-connected { background: var(--success); }
+        .status-disconnected { background: var(--danger); }
+        .status-awaiting { background: var(--warning); }
+        .status-initializing { background: var(--gray); }
+        
+        .status-dot::after {
+            content: '';
+            position: absolute;
+            top: -4px;
+            left: -4px;
+            right: -4px;
+            bottom: -4px;
+            border-radius: 50%;
+            border: 2px solid;
+            opacity: 0.4;
+        }
+        
+        .status-connected::after { border-color: var(--success); }
+        .status-disconnected::after { border-color: var(--danger); }
+        .status-awaiting::after { border-color: var(--warning); }
+        .status-initializing::after { border-color: var(--gray); }
+        
+        .status-text {
+            font-size: 1.3rem;
+            font-weight: 700;
+        }
+        
+        .status-description {
+            color: var(--gray);
+            font-size: 0.95rem;
+            line-height: 1.5;
+        }
+        
+        .qr-section {
+            text-align: center;
+        }
+        
+        #qrcode {
+            width: 256px;
+            height: 256px;
+            margin: 20px auto;
+            background: white;
+            padding: 20px;
+            border-radius: 15px;
+            border: 2px dashed #e5e7eb;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .qr-instructions {
+            background: #f0f9ff;
+            border-radius: 10px;
+            padding: 20px;
+            margin-top: 20px;
+            text-align: left;
+        }
+        
+        .qr-instructions ol {
+            margin-left: 20px;
+            color: var(--dark);
+        }
+        
+        .qr-instructions li {
+            margin-bottom: 10px;
+            line-height: 1.5;
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin-top: 25px;
+        }
+        
+        .stat-item {
+            text-align: center;
+            padding: 15px;
+            background: white;
+            border-radius: 10px;
+            border: 1px solid #e5e7eb;
+        }
+        
+        .stat-value {
+            font-size: 1.8rem;
+            font-weight: 800;
+            color: var(--primary);
+            margin: 5px 0;
+        }
+        
+        .stat-label {
+            font-size: 0.85rem;
+            color: var(--gray);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .buttons {
+            display: flex;
+            gap: 15px;
+            margin-top: 30px;
+        }
+        
+        .btn {
+            flex: 1;
+            padding: 16px 24px;
+            border: none;
+            border-radius: 12px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            color: white;
+        }
+        
+        .btn-secondary {
+            background: var(--light);
+            color: var(--dark);
+            border: 2px solid #e5e7eb;
+        }
+        
+        .btn-danger {
+            background: var(--danger);
+            color: white;
+        }
+        
+        .btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+        }
+        
+        .btn:active {
+            transform: translateY(-1px);
+        }
+        
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .last-activity {
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 1px solid #e5e7eb;
+            color: var(--gray);
+            font-size: 0.9rem;
+        }
+        
+        .api-info {
+            margin-top: 30px;
+            padding: 20px;
+            background: #f8fafc;
+            border-radius: 10px;
+            border-left: 4px solid var(--primary);
+        }
+        
+        .api-info h3 {
+            margin-bottom: 10px;
+            color: var(--dark);
+        }
+        
+        .api-endpoints {
+            font-family: 'Courier New', monospace;
+            background: var(--dark);
+            color: white;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 10px;
+            overflow-x: auto;
+        }
+        
+        .api-endpoint {
+            margin-bottom: 8px;
+            padding: 5px 10px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 4px;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 40px;
+        }
+        
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 5px solid #e5e7eb;
+            border-top: 5px solid var(--primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .pulse {
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+        
+        .hidden {
+            display: none !important;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="logo">
+                <i class="fas fa-robot"></i>
+            </div>
+            <h1>WhatsApp AI Bot</h1>
+            <p>Assistant client automatique hébergé sur Vercel. Connectez WhatsApp et le bot répondra automatiquement à vos clients.</p>
+            <div class="badge">
+                <i class="fas fa-bolt"></i> Powered by Vercel
+            </div>
+        </div>
+        
+        <div class="dashboard">
+            <div class="card">
+                <div class="card-title">
+                    <i class="fas fa-satellite-dish"></i>
+                    Statut de Connexion
+                </div>
+                
+                <div class="status-indicator">
+                    <div id="statusDot" class="status-dot status-initializing pulse"></div>
+                    <div class="status-text" id="statusText">Initialisation...</div>
+                </div>
+                
+                <div class="status-description" id="statusDescription">
+                    Connexion au service WhatsApp en cours...
+                </div>
+                
+                <div class="stats-grid">
+                    <div class="stat-item">
+                        <div class="stat-label">Uptime</div>
+                        <div class="stat-value" id="uptimeStat">00:00:00</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-label">Dernier Message</div>
+                        <div class="stat-value" id="lastMessageStat">--:--</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-label">Mémoire</div>
+                        <div class="stat-value" id="memoryStat">0 MB</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-label">Tentatives</div>
+                        <div class="stat-value" id="attemptsStat">0</div>
+                    </div>
+                </div>
+                
+                <div class="last-activity">
+                    <i class="fas fa-clock"></i>
+                    Dernière mise à jour: <span id="lastUpdate">--:--:--</span>
+                </div>
+            </div>
+            
+            <div class="card">
+                <div class="card-title">
+                    <i class="fas fa-qrcode"></i>
+                    Connexion WhatsApp
+                </div>
+                
+                <div id="qrContainer" class="qr-section hidden">
+                    <p>Scannez ce QR Code avec WhatsApp pour connecter le bot:</p>
+                    <div id="qrcode"></div>
+                    
+                    <div class="qr-instructions">
+                        <h4><i class="fas fa-mobile-alt"></i> Instructions:</h4>
+                        <ol>
+                            <li>Ouvrez <strong>WhatsApp</strong> sur votre téléphone</li>
+                            <li>Appuyez sur les <strong>trois points</strong> (⋮) en haut à droite</li>
+                            <li>Sélectionnez <strong>"Appareils connectés"</strong></li>
+                            <li>Appuyez sur <strong>"Lier un appareil"</strong></li>
+                            <li><strong>Scannez</strong> le QR Code ci-dessus</li>
+                        </ol>
+                        <p style="margin-top: 10px; font-size: 0.9rem; color: var(--warning);">
+                            <i class="fas fa-exclamation-triangle"></i>
+                            Utilisez un compte WhatsApp dédié, pas votre compte personnel
+                        </p>
+                    </div>
+                </div>
+                
+                <div id="connectedMessage" class="hidden">
+                    <div style="text-align: center; padding: 30px;">
+                        <div style="font-size: 4rem; color: var(--success); margin-bottom: 20px;">
+                            <i class="fas fa-check-circle"></i>
+                        </div>
+                        <h3 style="color: var(--success); margin-bottom: 10px;">✅ WhatsApp Connecté</h3>
+                        <p style="color: var(--gray); margin-bottom: 20px;">
+                            Le bot est maintenant actif et répondra automatiquement aux messages.
+                        </p>
+                        <div style="background: #f0f9ff; padding: 15px; border-radius: 10px; text-align: left;">
+                            <p><strong>Le bot peut maintenant:</strong></p>
+                            <ul style="margin-left: 20px; margin-top: 10px;">
+                                <li>Répondre automatiquement aux messages</li>
+                                <li>Utiliser l'IA pour générer des réponses pertinentes</li>
+                                <li>Fonctionner 24h/24</li>
+                                <li>Gérer plusieurs conversations simultanément</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+                
+                <div id="loadingQr" class="loading">
+                    <div class="spinner"></div>
+                    <p>Chargement du QR Code...</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="buttons">
+            <button id="refreshBtn" class="btn btn-primary" onclick="refreshStatus()">
+                <i class="fas fa-sync-alt"></i>
+                Rafraîchir le Statut
+            </button>
+            <button id="showQrBtn" class="btn btn-secondary" onclick="showQRCode()">
+                <i class="fas fa-qrcode"></i>
+                Afficher le QR Code
+            </button>
+            <button id="restartBtn" class="btn btn-danger" onclick="restartBot()">
+                <i class="fas fa-redo"></i>
+                Redémarrer le Bot
+            </button>
+        </div>
+        
+        <div class="api-info">
+            <h3><i class="fas fa-code"></i> API Endpoints</h3>
+            <p>Utilisez ces endpoints pour intégrer avec d'autres services:</p>
+            <div class="api-endpoints">
+                <div class="api-endpoint">GET /api/whatsapp?action=status → Statut du bot</div>
+                <div class="api-endpoint">GET /api/whatsapp?action=qr → QR Code WhatsApp</div>
+                <div class="api-endpoint">GET /api/health → Santé du service</div>
+                <div class="api-endpoint">POST /api/whatsapp?action=send → Envoyer un message</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Éléments DOM
+        const statusDot = document.getElementById('statusDot');
+        const statusText = document.getElementById('statusText');
+        const statusDescription = document.getElementById('statusDescription');
+        const qrContainer = document.getElementById('qrContainer');
+        const connectedMessage = document.getElementById('connectedMessage');
+        const loadingQr = document.getElementById('loadingQr');
+        const qrcodeElement = document.getElementById('qrcode');
+        const uptimeStat = document.getElementById('uptimeStat');
+        const lastMessageStat = document.getElementById('lastMessageStat');
+        const memoryStat = document.getElementById('memoryStat');
+        const attemptsStat = document.getElementById('attemptsStat');
+        const lastUpdate = document.getElementById('lastUpdate');
+        const refreshBtn = document.getElementById('refreshBtn');
+        const showQrBtn = document.getElementById('showQrBtn');
+        const restartBtn = document.getElementById('restartBtn');
+        
+        let statusInterval;
+        let qrCodeGenerated = false;
+        
+        // Formater le temps
+        function formatTime(seconds) {
+            const hours = Math.floor(seconds / 3600);
+            const minutes = Math.floor((seconds % 3600) / 60);
+            const secs = Math.floor(seconds % 60);
+            return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+        }
+        
+        // Formater la date
+        function formatDate(dateString) {
+            if (!dateString) return '--:--:--';
+            const date = new Date(dateString);
+            const now = new Date();
+            const diffMs = now - date;
+            const diffMins = Math.floor(diffMs / 60000);
+            
+            if (diffMins < 1) return 'À l\'instant';
+            if (diffMins < 60) return `Il y a ${diffMins} min`;
+            
+            return date.toLocaleTimeString();
+        }
+        
+        // Mettre à jour le statut
+        async function updateStatus() {
+            try {
+                const response = await fetch('/api/whatsapp?action=status');
+                const data = await response.json();
+                
+                if (!data.success) {
+                    throw new Error(data.error || 'Erreur de statut');
+                }
+                
+                // Mettre à jour les éléments de statut
+                const status = data.status || 'initializing';
+                const connected = data.connected || false;
+                
+                // Mettre à jour le point de statut
+                statusDot.className = 'status-dot';
+                statusDot.classList.add(`status-${status}`);
+                
+                if (status === 'connected' || connected) {
+                    statusDot.classList.add('pulse');
+                }
+                
+                // Mettre à jour le texte de statut
+                const statusMessages = {
+                    'connected': 'Connecté',
+                    'disconnected': 'Déconnecté',
+                    'awaiting_qr_scan': 'En attente du scan',
+                    'initializing': 'Initialisation',
+                    'authenticated': 'Authentifié',
+                    'auth_failure': 'Échec auth',
+                    'error': 'Erreur'
+                };
+                
+                statusText.textContent = statusMessages[status] || status;
+                
+                // Mettre à jour la description
+                const descriptions = {
+                    'connected': '✅ WhatsApp est connecté. Le bot répond aux messages automatiquement.',
+                    'disconnected': '❌ WhatsApp est déconnecté. Reconnexion en cours...',
+                    'awaiting_qr_scan': '📱 Scannez le QR Code avec WhatsApp pour connecter le bot.',
+                    'initializing': '🔄 Initialisation du service WhatsApp en cours...',
+                    'authenticated': '🔐 Authentification réussie. Connexion en cours...',
+                    'auth_failure': '❌ Échec d\'authentification. Redémarrage nécessaire.',
+                    'error': '⚠️ Erreur technique. Réessai en cours...'
+                };
+                
+                statusDescription.textContent = descriptions[status] || 'Statut inconnu';
+                
+                // Afficher/masquer QR Code
+                if (status === 'awaiting_qr_scan' && data.hasQr) {
+                    loadingQr.classList.add('hidden');
+                    qrContainer.classList.remove('hidden');
+                    connectedMessage.classList.add('hidden');
+                    
+                    // Générer le QR Code
+                    if (data.qr && data.qr !== 'CONNECTED' && !qrCodeGenerated) {
+                        qrcodeElement.innerHTML = '';
+                        QRCode.toCanvas(qrcodeElement, data.qr, {
+                            width: 256,
+                            height: 256,
+                            margin: 2,
+                            color: {
+                                dark: '#000000',
+                                light: '#FFFFFF'
+                            }
+                        }, function(error) {
+                            if (error) console.error('QR Code error:', error);
+                        });
+                        qrCodeGenerated = true;
+                    }
+                } else if (connected || status === 'connected') {
+                    loadingQr.classList.add('hidden');
+                    qrContainer.classList.add('hidden');
+                    connectedMessage.classList.remove('hidden');
+                    qrCodeGenerated = false;
+                } else {
+                    loadingQr.classList.remove('hidden');
+                    qrContainer.classList.add('hidden');
+                    connectedMessage.classList.add('hidden');
+                    qrCodeGenerated = false;
+                }
+                
+                // Mettre à jour les statistiques
+                if (data.uptime) {
+                    uptimeStat.textContent = formatTime(data.uptime);
+                }
+                
+                if (data.lastActivity) {
+                    lastMessageStat.textContent = formatDate(data.lastActivity);
+                }
+                
+                if (data.memory) {
+                    memoryStat.textContent = data.memory.rss || '0 MB';
+                }
+                
+                if (data.reconnectAttempts !== undefined) {
+                    attemptsStat.textContent = data.reconnectAttempts;
+                }
+                
+                lastUpdate.textContent = formatDate(data.lastUpdate);
+                
+                // Activer/désactiver boutons
+                showQrBtn.disabled = !data.hasQr;
+                restartBtn.disabled = status === 'initializing';
+                
+            } catch (error) {
+                console.error('Erreur mise à jour statut:', error);
+                statusText.textContent = 'Erreur';
+                statusDescription.textContent = 'Impossible de récupérer le statut. Réessayez.';
+                statusDot.className = 'status-dot status-disconnected';
+            }
+        }
+        
+        // Afficher le QR Code
+        function showQRCode() {
+            updateStatus();
+            if (qrContainer.classList.contains('hidden')) {
+                qrContainer.classList.remove('hidden');
+                loadingQr.classList.add('hidden');
+            }
+        }
+        
+        // Rafraîchir le statut
+        function refreshStatus() {
+            refreshBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Rafraîchissement...';
+            updateStatus().finally(() => {
+                setTimeout(() => {
+                    refreshBtn.innerHTML = '<i class="fas fa-sync-alt"></i> Rafraîchir le Statut';
+                }, 1000);
+            });
+        }
+        
+        // Redémarrer le bot
+        async function restartBot() {
+            if (!confirm('Êtes-vous sûr de vouloir redémarrer le bot ? La connexion WhatsApp sera interrompue.')) {
+                return;
+            }
+            
+            restartBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Redémarrage...';
+            restartBtn.disabled = true;
+            
+            try {
+                const response = await fetch('/api/whatsapp?action=restart');
+                const data = await response.json();
+                
+                if (data.success) {
+                    alert('✅ Redémarrage initié. Le bot se reconnectera dans quelques secondes.');
+                    setTimeout(updateStatus, 3000);
+                } else {
+                    alert('❌ Erreur lors du redémarrage: ' + (data.error || 'Inconnu'));
+                }
+            } catch (error) {
+                alert('❌ Erreur réseau lors du redémarrage');
+                console.error('Restart error:', error);
+            } finally {
+                setTimeout(() => {
+                    restartBtn.innerHTML = '<i class="fas fa-redo"></i> Redémarrer le Bot';
+                    restartBtn.disabled = false;
+                }, 3000);
+            }
+        }
+        
+        // Démarrer la surveillance
+        updateStatus();
+        statusInterval = setInterval(updateStatus, 5000); // Toutes les 5 secondes
+        
+        // Nettoyer à la fermeture
+        window.addEventListener('beforeunload', () => {
+            if (statusInterval) {
+                clearInterval(statusInterval);
+            }
+        });
+        
+        // Rafraîchir automatiquement si l'onglet redevient visible
+        document.addEventListener('visibilitychange', () => {
+            if (!document.hidden) {
+                updateStatus();
+            }
+        });
+    </script>
+</body>
+</html>
