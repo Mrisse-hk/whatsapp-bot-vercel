@@ -1,27 +1,19 @@
 {
   "name": "whatsapp-bot-vercel",
   "version": "1.0.0",
-  "description": "WhatsApp AI Bot for customer support",
-  "type": "module",
-  "main": "server.js",
+  "main": "api/whatsapp.js",
   "scripts": {
-    "dev": "node server.js",
-    "start": "node server.js",
-    "vercel-dev": "vercel dev",
-    "vercel-deploy": "vercel --prod"
+    "dev": "node api/whatsapp.js",
+    "start": "node api/whatsapp.js"
   },
   "dependencies": {
     "@google/generative-ai": "^0.8.0",
     "express": "^4.18.2",
     "puppeteer": "^21.11.0",
-    "puppeteer-core": "^21.11.0",
     "qrcode-terminal": "^0.12.0",
     "whatsapp-web.js": "^1.23.0"
   },
   "engines": {
     "node": ">=18"
-  },
-  "keywords": ["whatsapp", "bot", "ai", "vercel"],
-  "author": "mrisse",
-  "license": "MIT"
+  }
 }

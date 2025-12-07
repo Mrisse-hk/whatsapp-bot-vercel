@@ -1,15 +1,14 @@
-import { existsSync, readFileSync } from 'fs';
-import { join } from 'path';
+const fs = require('fs');
 
 const STATUS_FILE = '/tmp/whatsapp-status-vercel.json';
 
-export default async function handler(req, res) {
+module.exports = async function handler(req, res) {
     res.setHeader('Content-Type', 'application/json');
     
     try {
         let botStatus = {};
-        if (existsSync(STATUS_FILE)) {
-            botStatus = JSON.parse(readFileSync(STATUS_FILE, 'utf8'));
+        if (fs.existsSync(STATUS_FILE)) {
+            botStatus = JSON.parse(fs.readFileSync(STATUS_FILE, 'utf8'));
         }
         
         const healthData = {
@@ -39,4 +38,4 @@ export default async function handler(req, res) {
             uptime: process.uptime()
         });
     }
-}
+};

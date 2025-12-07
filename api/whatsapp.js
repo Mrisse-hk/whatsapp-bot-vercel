@@ -1,17 +1,14 @@
-import { Client, LocalAuth } from 'whatsapp-web.js';
-import qrcode from 'qrcode-terminal';
-import { GoogleGenerativeAI } from "@google/generative-ai";
-import { writeFileSync, existsSync, readFileSync, mkdirSync, unlinkSync } from 'fs';
-import { join } from 'path';
-import { fileURLToPath } from 'url';
-
-const __dirname = fileURLToPath(new URL('.', import.meta.url));
+const { Client, LocalAuth } = require('whatsapp-web.js');
+const qrcode = require('qrcode-terminal');
+const { GoogleGenerativeAI } = require("@google/generative-ai");
+const fs = require('fs');
+const path = require('path');
 
 // ================= CONFIGURATION =================
 const TMP_DIR = '/tmp';
-const SESSION_DIR = join(TMP_DIR, 'whatsapp-sessions-vercel');
-const QR_FILE = join(TMP_DIR, 'whatsapp-qr-vercel.txt');
-const STATUS_FILE = join(TMP_DIR, 'whatsapp-status-vercel.json');
+const SESSION_DIR = path.join(TMP_DIR, 'whatsapp-sessions-vercel');
+const QR_FILE = path.join(TMP_DIR, 'whatsapp-qr-vercel.txt');
+const STATUS_FILE = path.join(TMP_DIR, 'whatsapp-status-vercel.json');
 
 // ================= ÉTAT GLOBAL =================
 let whatsappClient = null;
@@ -24,14 +21,14 @@ const MAX_RECONNECT_ATTEMPTS = 5;
 // ================= INITIALISATION DOSSIERS =================
 function initDirectories() {
     try {
-        if (!existsSync(SESSION_DIR)) {
-            mkdirSync(SESSION_DIR, { recursive: true });
+        if (!fs.existsSync(SESSION_DIR)) {
+            fs.mkdirSync(SESSION_DIR, { recursive: true });
             console.log(`📁 Dossier session créé: ${SESSION_DIR}`);
         }
         
         // Initialiser fichiers
-        if (!existsSync(STATUS_FILE)) {
-            writeFileSync(STATUS_FILE, JSON.stringify({
+        if (!fs.existsSync(STATUS_FILE)) {
+            fs.writeFileSync(STATUS_FILE, JSON.stringify({
                 status: 'initializing',
                 lastUpdate: new Date().toISOString()
             }, null, 2));
@@ -157,7 +154,7 @@ async function initializeWhatsApp() {
             
             // Sauvegarder QR
             try {
-                writeFileSync(QR_FILE, qr);
+                fs.writeFileSync(QR_FILE, qr);
                 console.log('💾 QR sauvegardé dans', QR_FILE);
             } catch (error) {
                 console.error('❌ Erreur sauvegarde QR:', error);
@@ -184,15 +181,14 @@ async function initializeWhatsApp() {
             lastActivity = new Date();
             
             // Nettoyer fichier QR
-            if (existsSync(QR_FILE)) {
-                writeFileSync(QR_FILE, 'CONNECTED');
+            if (fs.existsSync(QR_FILE)) {
+                fs.writeFileSync(QR_FILE, 'CONNECTED');
             }
             
             updateStatusFile();
             
             console.log('\n✨ Le bot est maintenant actif !');
             console.log('✨ Il répondra automatiquement aux messages');
-            console.log('✨ Accédez à l\'interface: https://[votre-url].vercel.app\n');
         });
 
         // Authentifié
@@ -238,7 +234,7 @@ async function initializeWhatsApp() {
             
             console.log(`\n📩 NOUVEAU MESSAGE 📩`);
             console.log(`De: ${msg.from}`);
-            console.log(`Texte: ${msg.body}`);
+            console.log(`Texte: ${msg.body.substring(0, 100)}`);
             console.log(`Heure: ${new Date().toLocaleTimeString()}`);
             
             lastActivity = new Date();
@@ -318,14 +314,14 @@ function updateStatusFile() {
             uptime: process.uptime()
         };
         
-        writeFileSync(STATUS_FILE, JSON.stringify(statusData, null, 2));
+        fs.writeFileSync(STATUS_FILE, JSON.stringify(statusData, null, 2));
     } catch (error) {
         console.error('Erreur mise à jour statut:', error);
     }
 }
 
 // ================= HANDLER API VERCEL =================
-export default async function handler(req, res) {
+module.exports = async function handler(req, res) {
     // Headers CORS
     res.setHeader('Access-Control-Allow-Origin', '*');
     res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
@@ -348,8 +344,8 @@ export default async function handler(req, res) {
         switch (action) {
             case 'qr':
                 let qrContent = '';
-                if (existsSync(QR_FILE)) {
-                    qrContent = readFileSync(QR_FILE, 'utf8');
+                if (fs.existsSync(QR_FILE)) {
+                    qrContent = fs.readFileSync(QR_FILE, 'utf8');
                 }
                 
                 return res.status(200).json({
@@ -366,8 +362,8 @@ export default async function handler(req, res) {
                 
             case 'status':
                 let statusData = {};
-                if (existsSync(STATUS_FILE)) {
-                    statusData = JSON.parse(readFileSync(STATUS_FILE, 'utf8'));
+                if (fs.existsSync(STATUS_FILE)) {
+                    statusData = JSON.parse(fs.readFileSync(STATUS_FILE, 'utf8'));
                 }
                 
                 return res.status(200).json({
@@ -392,8 +388,8 @@ export default async function handler(req, res) {
                 reconnectAttempts = 0;
                 
                 // Nettoyer fichiers temporaires
-                if (existsSync(QR_FILE)) {
-                    unlinkSync(QR_FILE);
+                if (fs.existsSync(QR_FILE)) {
+                    fs.unlinkSync(QR_FILE);
                 }
                 
                 initializeWhatsApp();
@@ -402,30 +398,6 @@ export default async function handler(req, res) {
                     success: true,
                     message: 'Redémarrage en cours...',
                     restartInitiated: true
-                });
-                
-            case 'send':
-                if (method === 'POST' && whatsappClient && botStatus === 'connected') {
-                    const { phone, message } = req.body;
-                    
-                    if (!phone || !message) {
-                        return res.status(400).json({
-                            success: false,
-                            error: 'Phone and message required'
-                        });
-                    }
-                    
-                    const chatId = phone.includes('@c.us') ? phone : `${phone}@c.us`;
-                    await whatsappClient.sendMessage(chatId, message);
-                    
-                    return res.status(200).json({
-                        success: true,
-                        message: 'Message envoyé'
-                    });
-                }
-                return res.status(400).json({
-                    success: false,
-                    error: 'Bot non connecté ou méthode incorrecte'
                 });
                 
             default:
@@ -451,7 +423,7 @@ export default async function handler(req, res) {
             status: botStatus
         });
     }
-}
+};
 
 // ================= KEEP-ALIVE =================
 // Empêcher Vercel de tuer la fonction
@@ -468,9 +440,3 @@ setInterval(() => {
 console.log('⚡ WhatsApp Bot démarre sur Vercel...');
 console.log('📁 Dossier sessions:', SESSION_DIR);
 initializeWhatsApp().catch(console.error);
-
-// Configuration Vercel
-export const config = {
-    maxDuration: 60, // 60 secondes maximum
-    memory: 3008,    // 3GB de mémoire
-};
